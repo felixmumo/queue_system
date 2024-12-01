@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Customer Queue</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    padding: 20px;
+  }
+  h2 {
+    text-align: center;
+  }
+  .container {
+    max-width: 800px;
+    margin: 0 auto;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  input[type="text"] {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  select {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  button {
+    width: 100%;
+    padding: 10px;
+    background-color: #4CAF50;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-bottom: 10px; /* Add spacing between buttons */
+  }
+  button:hover {
+    background-color: #45a049;
+  }
+  #queue {
+    margin-bottom: 20px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  th, td {
+    padding: 8px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h2>Customer Queue</h2>
+
+  <div id="receipt"></div>
+
+  <select id="serviceType">
+    <option value="HELB">HELB</option>
+    <option value="NTSA">NTSA</option>
+    <option value="National ID Replacement">National ID Replacement</option>
+  </select>
+
+  <input type="text" id="customerName" placeholder="Enter Your Name"><br><br>
+  <button onclick="generateReceipt()">Generate E-Receipt</button>
+  <br> <!-- Add a line break for spacing -->
+  <button onclick="addToQueue()">Add to Queue</button>
+  <button onclick="callNext()">Call Next Customer</button>
+
+  <div id="queue"></div>
+</div>
+
+<script>
+  var queue = {
+    "HELB": [],
+    "NTSA": [],
+    "National ID Replacement": []
+  };
+  var counter = {
+    "HELB": 1,
+    "NTSA": 2,
+    "National ID Replacement": 3
+  };
+  var synth = window.speechSynthesis;
+
+  function generateReceipt() {
+    var serviceType = document.getElementById("serviceType").value;
+    var customerName = document.getElementById("customerName").value;
+    var ticketNumber = generateTicketNumber();
+    var timestamp = new Date().toLocaleString();
+    var receiptHTML = `
+      <div class="receipt">
+        <h3>E-Receipt</h3>
+        <p><strong>Service Type:</strong> ${serviceType}</p>
+        <p><strong>Customer Name:</strong> ${customerName}</p>
+        <p><strong>Ticket Number:</strong> ${ticketNumber}</p>
+        <p><strong>Timestamp:</strong> ${timestamp}</p>
+      </div>
+    `;
+    document.getElementById("receipt").innerHTML = receiptHTML;
+  }
+
+  function generateTicketNumber() {
+    // Generate a random 6-digit ticket number
+    return Math.floor(100000 + Math.random() * 900000);
+  }
+
+  function addToQueue() {
+    var serviceType = document.getElementById("serviceType").value;
+    var customerName = document.getElementById("customerName").value;
+    if (customerName.trim() !== "") {
+      queue[serviceType].push(customerName);
+      updateQueueDisplay();
+      document.getElementById("customerName").value = "";
+      document.getElementById("receipt").innerHTML = ""; // Clear receipt after adding to queue
+    }
+  }
+
+  function updateQueueDisplay() {
+    var queueElement = document.getElementById("queue");
+    queueElement.innerHTML = "";
+
+    for (const [serviceType, customers] of Object.entries(queue)) {
+      var tableHTML = "<h3>" + serviceType + " Queue</h3>";
+      tableHTML += "<table><tr><th>#</th><th>Customer Name</th></tr>";
+      for (var i = 0; i < customers.length; i++) {
+        tableHTML += "<tr><td>" + (i + 1) + "</td><td>" + customers[i] + "</td></tr>";
+      }
+      tableHTML += "</table>";
+      queueElement.innerHTML += tableHTML;
+    }
+  }
+
+  function callNext() {
+    var serviceType = document.getElementById("serviceType").value;
+    if (queue[serviceType].length > 0) {
+      var nextCustomer = queue[serviceType].shift();
+      updateQueueDisplay();
+      var utterance = new SpeechSynthesisUtterance(nextCustomer + ", please proceed to Counter " + counter[serviceType] + ".");
+      synth.speak(utterance);
+    } else {
+      alert("Queue for " + serviceType + " is empty!");
+    }
+  }
+</script>
+
+</body>
+</html>
